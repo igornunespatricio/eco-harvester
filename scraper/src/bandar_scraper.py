@@ -70,6 +70,7 @@ class BandarScraper(BaseRequestHandler):
         animals: Optional[List[str]] = None,
         basins: Optional[List[int]] = None,
         form_type: str = "RA",
+        per: Optional[str] = None,
     ) -> bytes:
         """
         Export report as XLSX file bytes.
@@ -81,6 +82,7 @@ class BandarScraper(BaseRequestHandler):
             animals: List of animal species names to filter
             basins: List of basin IDs to filter
             form_type: Report form type
+            per: Pagination items per page parameter for API
 
         Returns:
             Raw XLSX file bytes
@@ -102,7 +104,7 @@ class BandarScraper(BaseRequestHandler):
             "search[finished]": date_end.strftime("%d/%m/%Y"),
             "search[occurrence]": "",
             "search[project]": "",
-            "search[per]": "",
+            "search[per]": per if per else "",
             "search[action]": "Exportform",
         }
 
