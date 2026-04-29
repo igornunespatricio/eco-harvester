@@ -117,6 +117,18 @@ Define concise rules for building and maintaining the data pipeline:
 
 ---
 
+## Commit Best Practices
+
+* Use conventional format: `<type>(<scope>): <description>`
+* Types: `scrape`, `bronze`, `silver`, `gold`, `airflow`, `schema`, `fix`, `docs`
+* Scope: pipeline/source/table name
+* One logical change per commit
+* Never commit broken pipelines
+* Always describe data output changes
+* Reference issue/ticket when applicable
+
+---
+
 ## Anti-Patterns (Avoid)
 
 * Writing directly to Gold from scraper
