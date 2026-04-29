@@ -1,0 +1,31 @@
+services:
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    volumes:
+      - ./scraper:/app
+      - scraper-data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    restart: "no"
+    networks:
+      - eco-harvester-network
+    tty: true
+    stdin_open: true
+    command: sleep infinity
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+
+volumes:
+  scraper-data:
+
+networks:
+  eco-harvester-network:
+    driver: bridge
