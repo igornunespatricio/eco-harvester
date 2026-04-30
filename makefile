@@ -29,3 +29,36 @@ logs-scraper:
 # Show scraper status
 status:
 	docker compose ps
+
+build-minio:
+	docker compose build minio
+
+build-minio-nocache:
+	docker compose build minio --no-cache
+
+minio: build-minio
+	docker compose up -d minio
+
+stop-minio:
+	docker compose stop minio
+
+clean-minio:
+	docker compose down minio -v
+
+# start all containers
+start-no-cache:
+	docker compose build --no-cache
+	docker compose up -d
+
+start:
+	docker compose build
+	docker compose up -d
+
+# down all containers
+down:
+	docker compose down -v
+
+#restart all containers
+restart: down start
+
+restart-no-cache: down start-no-cache

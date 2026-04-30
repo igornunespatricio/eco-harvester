@@ -23,8 +23,48 @@ services:
           cpus: "1.0"
           memory: 1g
 
+  minio:
+    build:
+      context: ./storage
+      dockerfile: minio.Dockerfile
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+    networks:
+      - eco-harvester-network
+    command: server /data --console-address ":9001"
+
+  minio-init:
+    build:
+      context: ./storage
+      dockerfile: minio-client.Dockerfile
+    depends_on:
+      - minio
+    environment:
+       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    env_file:
+      - .env
+    networks:
+      - eco-harvester-network
+    entrypoint: ["/bin/sh", "/init-minio.sh"]
+    
+    
 volumes:
   scraper-data:
+  minio-data:
 
 networks:
   eco-harvester-network:
