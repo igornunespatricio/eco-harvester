@@ -4,6 +4,8 @@ x-airflow-common:
   build:
       context: ./airflow
       dockerfile: Dockerfile
+      args:
+        DOCKER_GID: ${DOCKER_GID:-1001}
   env_file:
     - .env
   environment:
@@ -27,6 +29,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"
   deploy:
       resources:
@@ -48,10 +51,12 @@ services:
   # ─────────────────────────────────────────
   scraper:
     build:
-      context: ./scraper
-      dockerfile: Dockerfile
+      context: . # ./scraper
+      dockerfile: ./scraper/Dockerfile
+    image: scraper:latest
     volumes:
       - ./scraper:/app
+      - ./utils/storage_client.py:/app/src/storage_client.py
       - scraper-data:/app/data
     environment:
       - PYTHONUNBUFFERED=1

@@ -10,13 +10,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better docker caching
-COPY requirements.txt .
+COPY scraper/requirements.txt .
 
 # Install python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy scraper code
-COPY . .
+COPY scraper/ .
+
+COPY utils/storage_client.py /app/src/storage_client.py
 
 # Default command
 # CMD ["python", "main.py"]

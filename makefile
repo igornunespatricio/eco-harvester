@@ -56,8 +56,11 @@ start:
 
 # down all containers
 down:
-	docker compose down -v
+	docker compose down
 
+down-volumes:
+	docker compose down -v
+	
 #restart all containers
 restart: down start
 

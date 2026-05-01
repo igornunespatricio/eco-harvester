@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 from base_request_handler import BaseRequestHandler
 
+from storage_client import MinioS3Client
+
 logger = logging.getLogger(__name__)
 
 
@@ -155,8 +157,24 @@ if __name__ == "__main__":
             output_filename = (
                 f"bandar_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             )
-            with open(output_filename, "wb") as f:
-                f.write(xlsx_bytes)
+            # with open(output_filename, "wb") as f:
+            #     f.write(xlsx_bytes)
+
+            storage_client = MinioS3Client(
+                endpoint="localhost:9000",
+                access_key="minioadmin",
+                secret_key="minioadmin",
+            )
+            from io import BytesIO
+
+            fileobj = (
+                BytesIO(xlsx_bytes) if isinstance(xlsx_bytes, bytes) else xlsx_bytes
+            )
+            storage_client.upload_fileobj(
+                fileobj=fileobj,
+                bucket_name="raw",
+                key=output_filename,
+            )
 
             logger.info(f"Report successfully saved as: {output_filename}")
 
