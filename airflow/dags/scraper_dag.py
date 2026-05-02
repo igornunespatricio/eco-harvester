@@ -12,10 +12,12 @@ MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "")
 
 
 @dag(
-    schedule=None,
-    start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
-    catchup=False,
-    tags=["example"],
+    # schedule=None,
+    # schedule="* * * * *",
+    schedule="@daily",
+    start_date=pendulum.datetime(2026, 4, 1, tz="UTC"),
+    catchup=True,
+    tags=["scraper"],
 )
 def scraper():
     """
@@ -26,13 +28,20 @@ def scraper():
     DockerOperator(
         task_id="run_scraper",
         image="scraper:latest",
-        command="python scraper/src/bandar_scraper.py",
+        command=(
+            "python scraper/main.py"
+            " --execution-date '{{ ts }}'"
+            " --interval-start  '{{ data_interval_start }}'"
+            " --interval-end  '{{ data_interval_end }}'"
+            " --logical-date '{{ logical_date }}'"
+        ),
         auto_remove="success",
         network_mode="eco-harvester-network",
         environment={
             "MINIO_ENDPOINT": MINIO_ENDPOINT,
             "MINIO_ACCESS_KEY": MINIO_ACCESS_KEY,
             "MINIO_SECRET_KEY": MINIO_SECRET_KEY,
+            # "EXECUTION_DATE": "{{ ds }}",
         },
         mount_tmp_dir=False,
     )

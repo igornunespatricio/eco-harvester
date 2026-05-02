@@ -9,7 +9,7 @@ from airflow.sdk import dag, task
     schedule=None,
     start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
-    tags=["example"],
+    tags=["taskflow_api", "tutorial", "example"],
 )
 def tutorial_taskflow_api():
     """

@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 import logging
 from datetime import datetime
-from base_request_handler import BaseRequestHandler
+from .base_request_handler import BaseRequestHandler
 
 dir = Path(__file__).parent.parent.parent
 print(dir)
