@@ -18,7 +18,9 @@ def scraper():
     DockerOperator(
         task_id="run_scraper",
         image="scraper:latest",
+        command="python scraper/src/bandar_scraper.py",
         auto_remove="success",
+        # network_mode="eco-harvester_eco-harvester-network",
         network_mode="eco-harvester-network",
         mount_tmp_dir=False,
     )

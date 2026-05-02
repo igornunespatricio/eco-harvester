@@ -16,9 +16,10 @@ COPY scraper/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy scraper code
-COPY scraper/ .
+COPY scraper/ scraper/
 
-COPY utils/storage_client.py /app/src/storage_client.py
+# COPY utils/storage_client.py /app/src/storage_client.py
+COPY utils/ utils/
 
 # Default command
 # CMD ["python", "main.py"]

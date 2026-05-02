@@ -31,6 +31,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"
+  group_add:
+    - "${DOCKER_GID:-1001}"
   deploy:
       resources:
         limits:
@@ -55,8 +57,7 @@ services:
       dockerfile: ./scraper/Dockerfile
     image: scraper:latest
     volumes:
-      - ./scraper:/app
-      - ./utils/storage_client.py:/app/src/storage_client.py
+      # - ./scraper:/app
       - scraper-data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
@@ -269,4 +270,5 @@ volumes:
 
 networks:
   eco-harvester-network:
+    name: eco-harvester-network   # forces exact name, no prefix
     driver: bridge

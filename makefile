@@ -58,10 +58,16 @@ start:
 down:
 	docker compose down
 
-down-volumes:
+down-no-volumes:
 	docker compose down -v
+
+# remove orphan containers
+down-orphans:
+	docker compose down --remove-orphans
 	
 #restart all containers
 restart: down start
 
 restart-no-cache: down start-no-cache
+
+restart-no-volumes: down-no-volumes start

@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 from bs4 import BeautifulSoup
 import requests
@@ -5,7 +7,12 @@ import logging
 from datetime import datetime
 from base_request_handler import BaseRequestHandler
 
-from storage_client import MinioS3Client
+dir = Path(__file__).parent.parent.parent
+print(dir)
+sys.path.append(str(dir))
+print("Current sys.path:", sys.path)
+
+from utils.storage_client import MinioS3Client
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +168,7 @@ if __name__ == "__main__":
             #     f.write(xlsx_bytes)
 
             storage_client = MinioS3Client(
-                endpoint="localhost:9000",
+                endpoint="minio:9000",
                 access_key="minioadmin",
                 secret_key="minioadmin",
             )
