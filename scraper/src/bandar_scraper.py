@@ -166,11 +166,12 @@ if __name__ == "__main__":
             )
             # with open(output_filename, "wb") as f:
             #     f.write(xlsx_bytes)
+            import os
 
             storage_client = MinioS3Client(
-                endpoint="minio:9000",
-                access_key="minioadmin",
-                secret_key="minioadmin",
+                endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
+                access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+                secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
             )
             from io import BytesIO
 
