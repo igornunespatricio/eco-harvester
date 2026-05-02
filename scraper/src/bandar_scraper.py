@@ -76,9 +76,9 @@ class BandarScraper(BaseRequestHandler):
         self,
         date_start: datetime,
         date_end: datetime,
-        animals: Optional[List[str]] = None,
-        basins: Optional[List[int]] = None,
-        form_type: str = "RA",
+        animals: str = "all_records",
+        basins: str = "all_records",
+        form: str = "RA",
         per: Optional[str] = None,
     ) -> bytes:
         """
@@ -88,13 +88,25 @@ class BandarScraper(BaseRequestHandler):
         Args:
             date_start: Start date for report
             date_end: End date for report
-            animals: List of animal species names to filter
-            basins: List of basin IDs to filter
-            form_type: Report form type
+            animals: List of animal species names to filter, or "all_records" for no filtering
+            basins: List of basin IDs to filter, or "all_records" for no filtering
+            form: Report form type
             per: Pagination items per page parameter for API
 
         Returns:
             Raw XLSX file bytes
+
+        Example:
+            >>> from datetime import datetime
+            >>> client.authenticate()
+            >>> xlsx_bytes = client.export_report(
+            ...     date_start=datetime(2025, 7, 1),
+            ...     date_end=datetime(2025, 7, 3),
+            ...     animals="Megaptera novaeangliae,Eubalaena australis,Balaenoptera edeni",
+            ...     basins="0,1,2",
+            ... )
+            >>> with open("report.xlsx", "wb") as f:
+            ...     f.write(xlsx_bytes)
         """
         if not self.authenticity_token:
             raise RuntimeError("Not authenticated. Call authenticate() first")
@@ -106,9 +118,9 @@ class BandarScraper(BaseRequestHandler):
         form_payload = {
             "utf8": "✓",
             "authenticity_token": self.authenticity_token,
-            "search[form]": form_type,
-            "search[animal]": ",".join(animals) if animals else "",
-            "search[basin]": ",".join(map(str, basins)) if basins else "",
+            "search[form]": form,
+            "search[animal]": animals,
+            "search[basin]": basins,
             "search[started]": date_start.strftime("%d/%m/%Y"),
             "search[finished]": date_end.strftime("%d/%m/%Y"),
             "search[occurrence]": "",
@@ -143,9 +155,9 @@ if __name__ == "__main__":
     date_from = datetime(2025, 6, 15)
     date_to = datetime(2025, 6, 15)
 
-    animals = ["Megaptera novaeangliae", "Eubalaena australis"]
+    animals = "Megaptera novaeangliae,Eubalaena australis"
 
-    basins = [1, 2, 3]
+    basins = "1,2,3"
 
     logger.info("Starting Bandar report export")
 
