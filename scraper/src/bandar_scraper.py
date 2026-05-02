@@ -72,18 +72,25 @@ class BandarScraper(BaseRequestHandler):
         logger.warning(f"Rate limited. Retry after: {retry_after} seconds")
         # Can implement actual waiting logic here if needed
 
+    def _check_has_results(self, html_content: str) -> bool:
+        """Check if the report page returned any results."""
+        soup = BeautifulSoup(html_content, "lxml")
+        no_results = soup.find("p", {"class": "no-results-label"})
+        return no_results is None
+
     def export_report(
         self,
         date_start: datetime,
         date_end: datetime,
-        animals: str = "all_records",
-        basins: str = "all_records",
-        form: str = "RA",
-        per: Optional[str] = None,
-    ) -> bytes:
+        animals: Optional[str] = "all_records",
+        basins: Optional[str] = "all_records",
+        form: Optional[str] = "RA",
+        per: Optional[str] = "",
+    ) -> Optional[bytes]:
         """
         Export report as XLSX file bytes.
         Must call authenticate() first before using this method.
+        Returns None if no data is available for the given filters.
 
         Args:
             date_start: Start date for report
@@ -115,7 +122,7 @@ class BandarScraper(BaseRequestHandler):
             f"Exporting report from {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y}"
         )
 
-        form_payload = {
+        base_payload = {
             "utf8": "✓",
             "authenticity_token": self.authenticity_token,
             "search[form]": form,
@@ -125,17 +132,34 @@ class BandarScraper(BaseRequestHandler):
             "search[finished]": date_end.strftime("%d/%m/%Y"),
             "search[occurrence]": "",
             "search[project]": "",
-            "search[per]": per if per else "",
-            "search[action]": "Exportform",
+            "search[per]": per,
         }
 
+        shared_headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": f"{self.base_url}{self.REPORT_PATH}",
+        }
+
+        # Pre-flight: check if any results exist before attempting export
+        logger.info("Checking for available results before export...")
+        search_response = self.post(
+            self.REPORT_PATH,
+            data={**base_payload, "search[action]": "Searchform"},
+            headers=shared_headers,
+        )
+
+        if not self._check_has_results(search_response.text):
+            logger.info(
+                f"No results found for {date_start:%d/%m/%Y}–{date_end:%d/%m/%Y} "
+                f"(animals={animals}, basins={basins}). Skipping export."
+            )
+            return None
+
+        # Results exist — proceed with export
         response = self.post(
             self.EXPORT_PATH,
-            data=form_payload,
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Referer": f"{self.base_url}{self.REPORT_PATH}",
-            },
+            data={**base_payload, "search[action]": "Exportform"},
+            headers=shared_headers,
         )
 
         file_size = len(response.content)

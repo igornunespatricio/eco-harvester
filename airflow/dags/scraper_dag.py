@@ -12,10 +12,9 @@ MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "")
 
 
 @dag(
-    # schedule=None,
-    # schedule="* * * * *",
     schedule="@daily",
-    start_date=pendulum.datetime(2026, 4, 1, tz="UTC"),
+    start_date=pendulum.datetime(2025, 4, 30, tz="UTC"),
+    end_date=pendulum.datetime(2025, 5, 31, tz="UTC"),
     catchup=True,
     tags=["scraper"],
 )
@@ -34,6 +33,9 @@ def scraper():
             " --interval-start  '{{ data_interval_start }}'"
             " --interval-end  '{{ data_interval_end }}'"
             " --logical-date '{{ logical_date }}'"
+            " --animals 'all_records'"
+            " --basins 'all_records'"
+            " --form 'RA'"
         ),
         auto_remove="success",
         network_mode="eco-harvester-network",
