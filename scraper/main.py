@@ -57,5 +57,5 @@ else:
     client.upload_fileobj(
         fileobj=fileobj,
         bucket_name="raw",
-        key=f"{args.form}/bandar_report_{logical_date.strftime('%Y-%m-%d')}.xlsx",
+        key=f"{str(args.form).lower()}/bandar_report_{logical_date.strftime('%Y-%m-%d')}.xlsx",
     )
