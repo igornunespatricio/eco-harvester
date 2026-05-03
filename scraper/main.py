@@ -25,10 +25,10 @@ parser.add_argument("--basins", type=str, default="all_records")
 parser.add_argument("--form", type=str, default="RA")
 args = parser.parse_args()
 
-# print(args.execution_date)
-# print(args.interval_start)
-# print(args.interval_end)
-# print(args.logical_date)
+print("Execution-date:", args.execution_date)
+print("Interval-start:", args.interval_start)
+print("Interval-end:", args.interval_end)
+print("Logical-date:", args.logical_date)
 
 client = MinioS3Client(
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
@@ -40,9 +40,11 @@ bandar = BandarScraper()
 
 bandar.authenticate()
 
+logical_date = datetime.fromisoformat(args.logical_date)
+
 xlsx_bytes = bandar.export_report(
-    date_start=datetime.fromisoformat(args.logical_date),
-    date_end=datetime.fromisoformat(args.logical_date),
+    date_start=logical_date,
+    date_end=logical_date,
     animals=args.animals,
     basins=args.basins,
     form=args.form,
@@ -55,5 +57,5 @@ else:
     client.upload_fileobj(
         fileobj=fileobj,
         bucket_name="raw",
-        key=f"bandar_report_{args.logical_date}.xlsx",
+        key=f"{args.form}/bandar_report_{logical_date.strftime('%Y-%m-%d')}.xlsx",
     )

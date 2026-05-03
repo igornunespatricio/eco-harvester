@@ -13,10 +13,11 @@ MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "")
 
 @dag(
     schedule="@daily",
-    start_date=pendulum.datetime(2025, 4, 30, tz="UTC"),
-    end_date=pendulum.datetime(2025, 5, 31, tz="UTC"),
+    start_date=pendulum.datetime(2025, 5, 1, tz="UTC"),
+    end_date=pendulum.datetime(2025, 5, 6, tz="UTC"),
     catchup=True,
     tags=["scraper"],
+    is_paused_upon_creation=True,
 )
 def scraper():
     """
@@ -43,7 +44,6 @@ def scraper():
             "MINIO_ENDPOINT": MINIO_ENDPOINT,
             "MINIO_ACCESS_KEY": MINIO_ACCESS_KEY,
             "MINIO_SECRET_KEY": MINIO_SECRET_KEY,
-            # "EXECUTION_DATE": "{{ ds }}",
         },
         mount_tmp_dir=False,
     )
