@@ -1,6 +1,6 @@
 from airflow.providers.docker.operators.docker import DockerOperator
+
 from airflow.sdk import dag
-import pendulum
 import os
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "")
@@ -13,20 +13,17 @@ FORMS = ["RA", "RDA", "FIC", "PLN"]
 def make_scraper_dag(form: str):
     @dag(
         dag_id=f"scraper_{form.lower()}",
-        # schedule="@daily",
-        schedule=None,
-        # start_date=pendulum.datetime(2025, 5, 1, tz="UTC"),
-        # end_date=pendulum.datetime(2025, 5, 6, tz="UTC"),
+        schedule="@daily",
         catchup=False,
         tags=["scraper", form.lower()],
-        is_paused_upon_creation=True,
+        is_paused_upon_creation=False,
     )
     def scraper():
         """
         ### Scraper DAG
         This DAG uses the DockerOperator to run the scraper container.
         """
-        DockerOperator(
+        run = DockerOperator(
             task_id="run_scraper",
             image="scraper:latest",
             command=(
@@ -48,6 +45,7 @@ def make_scraper_dag(form: str):
             },
             mount_tmp_dir=False,
         )
+        return run
 
     return scraper
 

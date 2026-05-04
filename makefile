@@ -70,4 +70,4 @@ restart: down start
 
 restart-no-cache: down start-no-cache
 
-restart-volumes: down-no-volumes start
+restart-volumes: down-volumes start
