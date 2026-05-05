@@ -1,4 +1,5 @@
 from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.timetables.interval import CronDataIntervalTimetable
 
 from airflow.sdk import dag
 import os
@@ -13,10 +14,10 @@ FORMS = ["RA", "RDA", "FIC", "PLN"]
 def make_scraper_dag(form: str):
     @dag(
         dag_id=f"scraper_{form.lower()}",
-        schedule="@daily",
+        schedule=CronDataIntervalTimetable("@monthly", timezone="UTC"),
         catchup=False,
         tags=["scraper", form.lower()],
-        is_paused_upon_creation=False,
+        is_paused_upon_creation=True,
     )
     def scraper():
         """
@@ -28,10 +29,8 @@ def make_scraper_dag(form: str):
             image="scraper:latest",
             command=(
                 "python scraper/main.py"
-                " --execution-date '{{ ts }}'"
                 " --interval-start '{{ data_interval_start }}'"
                 " --interval-end '{{ data_interval_end }}'"
-                " --logical-date '{{ logical_date }}'"
                 " --animals 'all_records'"
                 " --basins 'all_records'"
                 f" --form '{form}'"

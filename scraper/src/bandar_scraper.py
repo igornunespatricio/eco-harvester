@@ -118,10 +118,6 @@ class BandarScraper(BaseRequestHandler):
         if not self.authenticity_token:
             raise RuntimeError("Not authenticated. Call authenticate() first")
 
-        logger.info(
-            f"Exporting report from {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y}"
-        )
-
         base_payload = {
             "utf8": "✓",
             "authenticity_token": self.authenticity_token,
@@ -150,10 +146,14 @@ class BandarScraper(BaseRequestHandler):
 
         if not self._check_has_results(search_response.text):
             logger.info(
-                f"No results found for {date_start:%d/%m/%Y}–{date_end:%d/%m/%Y} "
+                f"No results found for {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y} "
                 f"(animals={animals}, basins={basins}). Skipping export."
             )
             return None
+
+        logger.info(
+            f"Exporting report from {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y}"
+        )
 
         # Results exist — proceed with export
         response = self.post(
