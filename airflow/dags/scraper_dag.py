@@ -1,6 +1,6 @@
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.timetables.interval import CronDataIntervalTimetable
-
+from airflow.models.param import Param
 from airflow.sdk import dag
 import os
 
@@ -18,6 +18,14 @@ def make_scraper_dag(form: str):
         catchup=False,
         tags=["scraper", form.lower()],
         is_paused_upon_creation=True,
+        params={
+            "per": Param(
+                default=2500,
+                enum=[50, 100, 250, 500, 1000, 2000, 2500],
+                type="integer",
+                description="Maximum number of items to export per run",
+            )
+        },
     )
     def scraper():
         """
@@ -34,6 +42,7 @@ def make_scraper_dag(form: str):
                 " --animals 'all_records'"
                 " --basins 'all_records'"
                 f" --form '{form}'"
+                " --per '{{ params.per }}'"
             ),
             auto_remove="success",
             network_mode="eco-harvester-network",

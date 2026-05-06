@@ -85,7 +85,7 @@ class BandarScraper(BaseRequestHandler):
         animals: Optional[str] = "all_records",
         basins: Optional[str] = "all_records",
         form: Optional[str] = "RA",
-        per: Optional[str] = "",
+        per: Optional[str] = "2500",
     ) -> Optional[bytes]:
         """
         Export report as XLSX file bytes.

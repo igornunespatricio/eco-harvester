@@ -21,6 +21,7 @@ parser.add_argument("--interval-end", type=str, default=datetime.now().isoformat
 parser.add_argument("--animals", type=str, default="all_records")
 parser.add_argument("--basins", type=str, default="all_records")
 parser.add_argument("--form", type=str, default="RA")
+parser.add_argument("--per", type=str, default="2500")
 args = parser.parse_args()
 
 print("Interval-start:", args.interval_start)
@@ -45,6 +46,7 @@ xlsx_bytes = bandar.export_report(
     animals=args.animals,
     basins=args.basins,
     form=args.form,
+    per=args.per,
 )
 
 if xlsx_bytes is None:
