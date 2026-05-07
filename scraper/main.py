@@ -2,7 +2,7 @@ import sys
 import os
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import logging
 
@@ -24,9 +24,6 @@ parser.add_argument("--form", type=str, default="RA")
 parser.add_argument("--per", type=str, default="2500")
 args = parser.parse_args()
 
-print("Interval-start:", args.interval_start)
-print("Interval-end:", args.interval_end)
-
 client = MinioS3Client(
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
     access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
@@ -37,8 +34,11 @@ bandar = BandarScraper()
 
 bandar.authenticate()
 
-interval_start = datetime.fromisoformat(args.interval_start)
-interval_end = datetime.fromisoformat(args.interval_end)
+interval_start = datetime.fromisoformat(args.interval_start).date()
+interval_end = (datetime.fromisoformat(args.interval_end) - timedelta(days=1)).date()
+
+print("Interval-start:", interval_start)
+print("Interval-end:", interval_end)
 
 xlsx_bytes = bandar.export_report(
     date_start=interval_start,

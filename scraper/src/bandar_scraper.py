@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any, List
 from bs4 import BeautifulSoup
 import requests
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from .base_request_handler import BaseRequestHandler
 
 dir = Path(__file__).parent.parent.parent
@@ -80,8 +80,8 @@ class BandarScraper(BaseRequestHandler):
 
     def export_report(
         self,
-        date_start: datetime,
-        date_end: datetime,
+        date_start: date,
+        date_end: date,
         animals: Optional[str] = "all_records",
         basins: Optional[str] = "all_records",
         form: Optional[str] = "RA",
@@ -104,11 +104,11 @@ class BandarScraper(BaseRequestHandler):
             Raw XLSX file bytes
 
         Example:
-            >>> from datetime import datetime
+            >>> from datetime import date
             >>> client.authenticate()
             >>> xlsx_bytes = client.export_report(
-            ...     date_start=datetime(2025, 7, 1),
-            ...     date_end=datetime(2025, 7, 3),
+            ...     date_start=date(2025, 7, 1),
+            ...     date_end=date(2025, 7, 3),
             ...     animals="Megaptera novaeangliae,Eubalaena australis,Balaenoptera edeni",
             ...     basins="0,1,2",
             ... )
@@ -146,14 +146,12 @@ class BandarScraper(BaseRequestHandler):
 
         if not self._check_has_results(search_response.text):
             logger.info(
-                f"No results found for {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y} "
+                f"No results found for {date_start} to {date_end} "
                 f"(animals={animals}, basins={basins}). Skipping export."
             )
             return None
 
-        logger.info(
-            f"Exporting report from {date_start:%d/%m/%Y} to {date_end:%d/%m/%Y}"
-        )
+        logger.info(f"Exporting report from {date_start} to {date_end}")
 
         # Results exist — proceed with export
         response = self.post(
@@ -176,8 +174,8 @@ class BandarScraper(BaseRequestHandler):
 
 
 if __name__ == "__main__":
-    date_from = datetime(2025, 6, 15)
-    date_to = datetime(2025, 6, 15)
+    date_from = date(2025, 6, 15)
+    date_to = date(2025, 6, 15)
 
     animals = "Megaptera novaeangliae,Eubalaena australis"
 
