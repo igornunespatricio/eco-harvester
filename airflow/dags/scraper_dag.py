@@ -1,7 +1,6 @@
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.timetables.interval import CronDataIntervalTimetable
-from airflow.models.param import Param
-from airflow.sdk import dag
+from airflow.sdk import dag, Param
 import os
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "")

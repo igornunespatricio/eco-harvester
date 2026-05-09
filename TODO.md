@@ -1,6 +1,6 @@
-- add all forms: RDA, FIC, PLN, etc.
-- backfill to get past date records (decide start and end dates)
-- correct warning  The `airflow.models.param.Param` attribute is deprecated. Please use `'airflow.sdk.Param'`
+- build silver task group
+- build gold task group
+
 
 - remember the bandar report link is https://libgeo.univali.br/bandar/report
 ![alt text](assets/image.png)
