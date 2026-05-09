@@ -22,6 +22,7 @@ parser.add_argument("--animals", type=str, default="all_records")
 parser.add_argument("--basins", type=str, default="all_records")
 parser.add_argument("--form", type=str, default="RA")
 parser.add_argument("--per", type=str, default="2500")
+parser.add_argument("--timeout", type=int, default=300)
 args = parser.parse_args()
 
 client = MinioS3Client(
@@ -30,7 +31,9 @@ client = MinioS3Client(
     secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
 )
 
-bandar = BandarScraper()
+bandar = BandarScraper(
+    timeout=args.timeout,
+)
 
 bandar.authenticate()
 

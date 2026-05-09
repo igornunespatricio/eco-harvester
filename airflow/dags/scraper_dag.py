@@ -8,7 +8,7 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "")
 MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "")
 
-FORMS = ["RA", "RDA", "FIC", "PLN"]
+FORMS = ["RA", "RDA", "FIC", "PLN", "REG", "NEC", "ESF", "REAB", "REPRO", "RSOL"]
 
 
 def make_scraper_dag(form: str):
@@ -24,7 +24,12 @@ def make_scraper_dag(form: str):
                 enum=[50, 100, 250, 500, 1000, 2000, 2500],
                 type="integer",
                 description="Maximum number of items to export per run",
-            )
+            ),
+            "timeout": Param(
+                default=300,
+                type="integer",
+                description="Timeout in seconds for each task",
+            ),
         },
     )
     def scraper():
@@ -43,6 +48,7 @@ def make_scraper_dag(form: str):
                 " --basins 'all_records'"
                 f" --form '{form}'"
                 " --per '{{ params.per }}'"
+                " --timeout '{{ params.timeout }}'"
             ),
             auto_remove="success",
             network_mode="eco-harvester-network",
