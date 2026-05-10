@@ -38,17 +38,20 @@ NETWORK = "eco-harvester-network"
 # Entities processed by each layer
 # ---------------------------------------------------------------------------
 
-FORMS = ["RA", "RDA", "FIC", "PLN", "REG", "NEC", "ESF", "REAB", "REPRO", "RSOL"]
+FORMS = [
+    "RA",
+    "RDA",
+]  # no data or sparse for these: "FIC", "PLN", "REG", "NEC", "ESF", "REAB", "REPRO", "RSOL"]
 SILVER_ENTITIES = [
-    "entity_x",
-    "entity_y",
-    "entity_z",
-]  # 👈 replace with your silver entities
+    "RA",
+    "RDA",
+]  # one transformer per form
+
 GOLD_MARTS = [
-    "mart_A",
-    "mart_B",
-    "mart_C",
-]  # 👈 replace with your gold marts
+    "mart_detections",
+    "mart_shutdowns",
+    "mart_project_summary",
+]
 
 
 # ---------------------------------------------------------------------------
