@@ -53,12 +53,36 @@ services:
   # ─────────────────────────────────────────
   scraper:
     build:
-      context: . # ./scraper
+      context: .
       dockerfile: ./scraper/Dockerfile
     image: scraper:latest
     volumes:
       # - ./scraper:/app
       - scraper-data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    restart: "no"
+    networks:
+      - eco-harvester-network
+    tty: true
+    stdin_open: true
+    command: sleep infinity
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+  
+  transform:
+    build:
+      context: .
+      dockerfile: ./transform/Dockerfile
+    image: transform:latest
+    volumes:
+      - transform-data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
@@ -267,6 +291,7 @@ volumes:
   scraper-data:
   minio-data:
   postgres-db-volume:
+  transform-data:
 
 networks:
   eco-harvester-network:
