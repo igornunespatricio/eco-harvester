@@ -1,6 +1,12 @@
+import sys
 import argparse
 import logging
 import time
+from pathlib import Path
+
+dir = Path(__file__).parent.parent
+sys.path.append(str(dir))
+print("Current sys.path:", sys.path)
 
 logger = logging.getLogger(__name__)
 

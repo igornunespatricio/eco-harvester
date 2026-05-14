@@ -1,5 +1,6 @@
 import boto3
 from botocore.client import Config
+from io import BytesIO
 
 
 class MinioS3Client:
@@ -39,6 +40,13 @@ class MinioS3Client:
         :param key: object name in bucket
         """
         self.s3.upload_fileobj(fileobj, bucket_name, key)
+
+    def get_fileobj(self, bucket_name: str, key: str) -> BytesIO:
+        """Download an object from S3/MinIO into a BytesIO object."""
+        buf = BytesIO()
+        self.s3.download_fileobj(bucket_name, key, buf)
+        buf.seek(0)
+        return buf
 
 
 if __name__ == "__main__":
