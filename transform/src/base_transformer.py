@@ -133,6 +133,9 @@ class BaseTransformer:
             self.logger.warning(
                 "COLUMN_RENAMES references columns not found in DataFrame: %s", unknown
             )
+        for old, new in mapping.items():
+            if old in df.columns:
+                self.logger.info("Renaming column %r → %r", old, new)
         return df.rename(columns=mapping)
 
     def _parse_dates(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -147,6 +150,8 @@ class BaseTransformer:
                 self.logger.warning(
                     "Column '%s': %d value(s) could not be parsed as date.", col, nulls
                 )
+            else:
+                self.logger.info("Parsed date column '%s' successfully.", col)
         return df
 
     def _validate_times(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -157,6 +162,7 @@ class BaseTransformer:
         _time_re = re.compile(r"^\d{2}:\d{2}$")
         for col in getattr(self._config, "TIME_COLUMNS", []):
             if col not in df.columns:
+                self.logger.warning("Time column '%s' not found, skipping.", col)
                 continue
             mask_bad = df[col].notna() & ~df[col].astype(str).str.match(_time_re)
             if mask_bad.any():
@@ -166,6 +172,8 @@ class BaseTransformer:
                     mask_bad.sum(),
                 )
                 df.loc[mask_bad, col] = None
+            else:
+                self.logger.info("Validated time column '%s' successfully.", col)
         return df
 
     def _cast_nullable_ints(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -176,7 +184,18 @@ class BaseTransformer:
                     "Nullable-int column '%s' not found, skipping.", col
                 )
                 continue
+            before_nulls = df[col].isna().sum()
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+            after_nulls = df[col].isna().sum()
+            new_nulls = after_nulls - before_nulls
+            if new_nulls:
+                self.logger.warning(
+                    "Column '%s': %d value(s) could not be cast to Int64 — set to NaN.",
+                    col,
+                    new_nulls,
+                )
+            else:
+                self.logger.info("Cast column '%s' to Int64 successfully.", col)
         return df
 
     def _cast_booleans(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -231,7 +250,7 @@ if __name__ == "__main__":
 
     SOURCE_BUCKET = "raw"
     SOURCE_KEY = "ra/bandar_report_2025-01-01_to_2025-01-31.xlsx"
-    FORM = "RA"
+    FORM = "ra"
 
     client = MinioS3Client(
         endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
@@ -244,20 +263,14 @@ if __name__ == "__main__":
 
     raw_df: pd.DataFrame = pd.read_excel(buf)
     print(f"Raw shape : {raw_df.shape}")
-    # print(
-    #     f"Raw columns ({len(raw_df.columns)}):\n  "
-    #     + "\n  ".join(raw_df.columns.tolist())
-    # )
     for col in raw_df.columns:
         print(f"  {col:<70s} {str(raw_df[col].dtype)}")
 
     # # --- transform ---
-    # transformer = BaseTransformer(form=FORM)
-    # clean_df = transformer.run(raw_df)
+    transformer = BaseTransformer(form=FORM)
+    clean_df = transformer.run(raw_df)
 
-    # print(f"\nClean shape : {clean_df.shape}")
-    # print(f"\nClean columns & dtypes:")
-    # for col in clean_df.columns:
-    #     print(f"  {col:<70s} {str(clean_df[col].dtype)}")
-
-    # print(f"\nSample row:\n{clean_df.iloc[0].to_dict()}")
+    print(f"\nClean shape : {clean_df.shape}")
+    print(f"\nClean columns & dtypes:")
+    for col in clean_df.columns:
+        print(f"  {col:<70s} {str(clean_df[col].dtype)}")

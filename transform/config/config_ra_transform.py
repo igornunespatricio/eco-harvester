@@ -133,9 +133,27 @@ TIME_COLUMNS: list[str] = [
 #    Use the FINAL name (after rename).
 # ---------------------------------------------------------------------------
 NULLABLE_INT_COLUMNS: list[str] = [
+    # --- already present ---
     "observer_2_ctf",
     "observer_3_ctf",
     "user_observer_3_ctf",
+    # --- new: CTF completeness ---
+    "observer_1_ctf",
+    "user_observer_1_ctf",
+    "user_observer_2_ctf",
+    # --- new: nullable in current data ---
+    "vessel_heading_deg",
+    "animal_position_2_distance_m",
+    "animal_position_3_distance_m",
+    "seismic_source_volume_cui",
+    # --- new: currently no nulls but whole-number semantics ---
+    "sea_state",
+    "wind_speed_knots",
+    "adult_count",
+    "calf_count",
+    "animal_position_1_distance_m",
+    "total_activity_interruption_min",
+    "closest_approach_distance_m",
 ]
 
 
