@@ -1,3 +1,4 @@
+import io
 import sys
 import argparse
 import logging
@@ -18,6 +19,7 @@ from utils.storage_client import MinioS3Client
 logger = logging.getLogger(__name__)
 
 SOURCE_BUCKET = "raw"
+DESTINATION_BUCKET = "silver"
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,11 +43,11 @@ def main() -> None:
     logger.info("interval_end:   %s", args.interval_end)
     logger.info("dry_run:        %s", args.dry_run)
     logger.info("Starting transform...")
-    # logger.info("Simulating work by sleeping for 600 seconds...")
-    # time.sleep(600)
+
     start = datetime.fromisoformat(args.interval_start).date()
     end = datetime.fromisoformat(args.interval_end).date()
-    source_key = f"{args.entity}/bandar_report_{start}_to_{end}.xlsx"
+    source_key = f"{str(args.entity).lower()}/bandar_report_{start}_to_{end}.xlsx"
+    destionation_key = source_key.replace("xlsx", "parquet")
 
     logger.info("source_key: %s", source_key)
     client = MinioS3Client(
@@ -63,6 +65,12 @@ def main() -> None:
 
     if not args.dry_run:
         # TODO: write clean_df to the silver layer
+        buffer = io.BytesIO()
+        clean_df.to_parquet(buffer, index=False)
+        buffer.seek(0)
+        client.upload_fileobj(
+            fileobj=buffer, bucket_name=DESTINATION_BUCKET, key=destionation_key
+        )
         pass
 
     logger.info("Transform completed successfully!")

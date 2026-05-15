@@ -204,6 +204,7 @@ class BaseTransformer:
             if col not in df.columns:
                 self.logger.warning("Bool column '%s' not found, skipping.", col)
                 continue
+            before_nulls = df[col].isna().sum()
             df[col] = (
                 df[col]
                 .map(
@@ -215,6 +216,16 @@ class BaseTransformer:
                 )
                 .astype("boolean")
             )
+            after_nulls = df[col].isna().sum()
+            new_nulls = after_nulls - before_nulls
+            if new_nulls:
+                self.logger.warning(
+                    "Column '%s': %d value(s) could not be cast to boolean — set to NaN.",
+                    col,
+                    new_nulls,
+                )
+            else:
+                self.logger.info("Cast column '%s' to boolean successfully.", col)
         return df
 
     def _drop_duplicates(
@@ -232,6 +243,7 @@ class BaseTransformer:
         """Stamp every row with processing metadata."""
         df["_processed_at"] = datetime.now(tz=timezone.utc).isoformat()
         df["_transformer"] = f"{self.__class__.__name__}[{self.form}]"
+        self.logger.info("Metadata columns created")
         return df
 
 
