@@ -1,6 +1,6 @@
 - build silver task group
 - build gold task group
-
+- create buckets environment variables and use them across the files 
 
 - remember the bandar report link is https://libgeo.univali.br/bandar/report
 ![alt text](assets/image.png)

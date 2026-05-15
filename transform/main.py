@@ -13,6 +13,14 @@ dir = Path(__file__).parent.parent
 sys.path.append(str(dir))
 print("Current sys.path:", sys.path)
 
+
+from transform.src.ra_transform import RATransformer
+from transform.src.rda_transform import RDATransformer
+
+_TRANSFORMER_REGISTRY = {
+    "RA": RATransformer,
+    "RDA": RDATransformer,
+}
 from transform.src.base_transformer import BaseTransformer
 from utils.storage_client import MinioS3Client
 
@@ -24,10 +32,27 @@ DESTINATION_BUCKET = "silver"
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Silver transform")
-    p.add_argument("--entity", required=True, type=str)
-    p.add_argument("--interval-start", required=True, type=str)
-    p.add_argument("--interval-end", required=True, type=str)
-    p.add_argument("--dry-run", type=bool, default=False)
+    p.add_argument(
+        "--entity", required=True, type=str, help="RA or RDA", choices=["RA", "RDA"]
+    )
+    p.add_argument(
+        "--interval-start",
+        required=True,
+        type=str,
+        help="Start date of the records to be extracted",
+    )
+    p.add_argument(
+        "--interval-end",
+        required=True,
+        type=str,
+        help="End date of the records to be extracted",
+    )
+    p.add_argument(
+        "--dry-run",
+        type=bool,
+        default=False,
+        help="True to avoid writing to the silver layer. (default: %(default)s)",
+    )
     return p.parse_args()
 
 
@@ -59,7 +84,7 @@ def main() -> None:
     raw_df = pd.read_excel(buf)
     logger.info("Raw shape: %s", raw_df.shape)
 
-    transformer = BaseTransformer(form=args.entity)
+    transformer = _TRANSFORMER_REGISTRY[args.entity]()
     clean_df = transformer.run(raw_df)
     logger.info("Clean shape: %s", clean_df.shape)
 
@@ -71,7 +96,6 @@ def main() -> None:
         client.upload_fileobj(
             fileobj=buffer, bucket_name=DESTINATION_BUCKET, key=destionation_key
         )
-        pass
 
     logger.info("Transform completed successfully!")
 

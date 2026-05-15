@@ -55,6 +55,9 @@ class BaseTransformer:
                 ...
     """
 
+    _TRUTHY = {"true", "sim", "yes", "1"}
+    _FALSY = {"false", "não", "nao", "no", "0"}
+
     def __init__(self, form: str):
         self.form = form.upper()
         self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.form}]")
@@ -108,6 +111,7 @@ class BaseTransformer:
         df = self._validate_times(df)
         df = self._cast_nullable_ints(df)
         df = self._cast_booleans(df)
+        df = self.post_process(df)
         df = self._drop_duplicates(df)
         df = self._add_metadata(df)
         return df
@@ -185,7 +189,8 @@ class BaseTransformer:
                 )
                 continue
             before_nulls = df[col].isna().sum()
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+            # df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+            df[col] = pd.to_numeric(df[col], errors="coerce").round().astype("Int64")
             after_nulls = df[col].isna().sum()
             new_nulls = after_nulls - before_nulls
             if new_nulls:
@@ -199,7 +204,6 @@ class BaseTransformer:
         return df
 
     def _cast_booleans(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Cast columns in config.BOOL_COLUMNS to pandas nullable boolean."""
         for col in getattr(self._config, "BOOL_COLUMNS", []):
             if col not in df.columns:
                 self.logger.warning("Bool column '%s' not found, skipping.", col)
@@ -210,8 +214,8 @@ class BaseTransformer:
                 .map(
                     lambda v: (
                         True
-                        if str(v).strip().lower() == "true"
-                        else False if str(v).strip().lower() == "false" else None
+                        if str(v).strip().lower() in self._TRUTHY
+                        else False if str(v).strip().lower() in self._FALSY else None
                     )
                 )
                 .astype("boolean")
@@ -228,12 +232,14 @@ class BaseTransformer:
                 self.logger.info("Cast column '%s' to boolean successfully.", col)
         return df
 
-    def _drop_duplicates(
-        self, df: pd.DataFrame, subset: Optional[list] = None
-    ) -> pd.DataFrame:
+    def post_process(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Hook for subclass-specific transformations. No-op by default."""
+        return df
+
+    def _drop_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
         """Drop duplicate rows and log how many were removed."""
         before = len(df)
-        df = df.drop_duplicates(subset=subset)
+        df = df.drop_duplicates()
         dropped = before - len(df)
         if dropped:
             self.logger.info("Dropped %d duplicate rows.", dropped)
@@ -245,6 +251,24 @@ class BaseTransformer:
         df["_transformer"] = f"{self.__class__.__name__}[{self.form}]"
         self.logger.info("Metadata columns created")
         return df
+
+    def hhmm_to_minutes(self, series: pd.Series) -> pd.Series:
+        """Convert 'HH:MM' duration strings to total minutes as Int64. Invalid formats become NA."""
+
+        def _convert(v):
+            if pd.isna(v):
+                return pd.NA
+            parts = str(v).strip().split(":")
+            if len(parts) != 2:
+                self.logger.warning("Unexpected duration format %r — setting to NA.", v)
+                return pd.NA
+            try:
+                return int(parts[0]) * 60 + int(parts[1])
+            except ValueError:
+                self.logger.warning("Could not parse duration %r — setting to NA.", v)
+                return pd.NA
+
+        return series.map(_convert).astype("Int64")
 
 
 if __name__ == "__main__":
