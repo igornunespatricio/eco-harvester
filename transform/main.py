@@ -7,13 +7,15 @@ import os
 from io import BytesIO
 from pathlib import Path
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 dir = Path(__file__).parent.parent
 sys.path.append(str(dir))
 print("Current sys.path:", sys.path)
 
 
+from utils.storage_client import MinioS3Client
+from utils.utility_functions import str_to_bool
 from transform.src.ra_transform import RATransformer
 from transform.src.rda_transform import RDATransformer
 
@@ -21,8 +23,7 @@ _TRANSFORMER_REGISTRY = {
     "RA": RATransformer,
     "RDA": RDATransformer,
 }
-from transform.src.base_transformer import BaseTransformer
-from utils.storage_client import MinioS3Client
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--dry-run",
-        type=bool,
+        type=str_to_bool,
         default=False,
         help="True to avoid writing to the silver layer. (default: %(default)s)",
     )
@@ -70,7 +71,7 @@ def main() -> None:
     logger.info("Starting transform...")
 
     start = datetime.fromisoformat(args.interval_start).date()
-    end = datetime.fromisoformat(args.interval_end).date()
+    end = (datetime.fromisoformat(args.interval_end) - timedelta(days=1)).date()
     source_key = f"{str(args.entity).lower()}/bandar_report_{start}_to_{end}.xlsx"
     destionation_key = source_key.replace("xlsx", "parquet")
 
@@ -89,7 +90,6 @@ def main() -> None:
     logger.info("Clean shape: %s", clean_df.shape)
 
     if not args.dry_run:
-        # TODO: write clean_df to the silver layer
         buffer = io.BytesIO()
         clean_df.to_parquet(buffer, index=False)
         buffer.seek(0)
