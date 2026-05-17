@@ -5,50 +5,33 @@ from datetime import datetime, timezone
 from typing import Optional
 from pathlib import Path
 import sys
-
-
 import pandas as pd
-
-dir = Path(__file__).parent.parent.parent
-sys.path.append(str(dir))
-print("Current sys.path:", sys.path)
-
-# ---------------------------------------------------------------------------
-# Registry: maps form name → config module path
-# Add a new entry here whenever a new form config is created.
-# ---------------------------------------------------------------------------
-CONFIG_REGISTRY: dict[str, str] = {
-    "RA": "transform.config.config_ra_transform",
-    "RDA": "transform.config.config_rda_transform",
-}
 
 
 class BaseTransformer:
     """
     Config-driven transformer for all form types.
 
-    Instantiate with the form name and it loads the matching config
-    automatically. No subclassing needed unless a form requires custom
-    transformation logic beyond what the config can express.
+    Instantiate with the form name and a config module (imported or inline).
+    No subclassing needed unless a form requires custom transformation logic
+    beyond what the config can express.
 
     Usage:
+        import transform.config.config_ra_transform as ra_config
+
         raw_df      = storage_client.read(...)       # handled externally
-        transformer = BaseTransformer(form="RA")
+        transformer = BaseTransformer(form="RA", config=ra_config)
         clean_df    = transformer.run(raw_df)
         storage_client.write(clean_df, ...)          # handled externally
 
-    Adding a new form:
-        1. Create  transform/config/config_<form>_transform.py
-           with the same structure as config_ra_transform.py
-        2. Add an entry to CONFIG_REGISTRY above — that's it.
-
     Overriding for a form with custom logic:
-        Subclass BaseTransformer, call super().__init__(form) to load the
-        config, then override only the step(s) that differ.
+        Subclass BaseTransformer and pass the config to super().__init__().
+
+        import transform.config.config_rda_transform as rda_config
 
         class RDATransformer(BaseTransformer):
             def __init__(self):
-                super().__init__(form="RDA")
+                super().__init__(form="RDA", config=rda_config)
 
             def _parse_dates(self, df):
                 # RDA uses a different date format
@@ -58,32 +41,13 @@ class BaseTransformer:
     _TRUTHY = {"true", "sim", "yes", "1"}
     _FALSY = {"false", "não", "nao", "no", "0"}
 
-    def __init__(self, form: str):
+    def __init__(self, form: str, config):
         self.form = form.upper()
         self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.form}]")
-        self._config = self._load_config(self.form)
-
-    # ------------------------------------------------------------------
-    # Config loading
-    # ------------------------------------------------------------------
-
-    def _load_config(self, form: str):
-        if form not in CONFIG_REGISTRY:
-            raise ValueError(
-                f"Unknown form '{form}'. "
-                f"Available forms: {sorted(CONFIG_REGISTRY.keys())}"
-            )
-        module_path = CONFIG_REGISTRY[form]
-        try:
-            config = importlib.import_module(module_path)
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                f"Config module for form '{form}' not found at '{module_path}'. "
-                f"Make sure the file exists and the package is on sys.path."
-            ) from e
-
-        self.logger.debug("Loaded config from '%s'.", module_path)
-        return config
+        self._config = config
+        self.logger.debug(
+            "Config set to '%s'.", getattr(config, "__name__", repr(config))
+        )
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -189,7 +153,6 @@ class BaseTransformer:
                 )
                 continue
             before_nulls = df[col].isna().sum()
-            # df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
             df[col] = pd.to_numeric(df[col], errors="coerce").round().astype("Int64")
             after_nulls = df[col].isna().sum()
             new_nulls = after_nulls - before_nulls
@@ -277,6 +240,7 @@ if __name__ == "__main__":
     from io import BytesIO
 
     import pandas as pd
+    import transform.config.config_ra_transform as ra_config
 
     from utils.storage_client import MinioS3Client
 
@@ -286,7 +250,6 @@ if __name__ == "__main__":
 
     SOURCE_BUCKET = "raw"
     SOURCE_KEY = "ra/bandar_report_2025-01-01_to_2025-01-31.xlsx"
-    FORM = "ra"
 
     client = MinioS3Client(
         endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
@@ -294,16 +257,13 @@ if __name__ == "__main__":
         secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
     )
 
-    # --- read from MinIO into a DataFrame ---
     buf: BytesIO = client.get_fileobj(SOURCE_BUCKET, SOURCE_KEY)
-
     raw_df: pd.DataFrame = pd.read_excel(buf)
     print(f"Raw shape : {raw_df.shape}")
     for col in raw_df.columns:
         print(f"  {col:<70s} {str(raw_df[col].dtype)}")
 
-    # # --- transform ---
-    transformer = BaseTransformer(form=FORM)
+    transformer = BaseTransformer(form="RA", config=ra_config)
     clean_df = transformer.run(raw_df)
 
     print(f"\nClean shape : {clean_df.shape}")
