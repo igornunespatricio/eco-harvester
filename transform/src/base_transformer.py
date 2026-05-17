@@ -69,14 +69,14 @@ class BaseTransformer:
     # ------------------------------------------------------------------
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = self._drop_empty_columns(df)
+        df = self._drop_columns(df)
         df = self._rename_columns(df)
         df = self._parse_dates(df)
         df = self._validate_times(df)
         df = self._cast_nullable_ints(df)
         df = self._cast_booleans(df)
-        df = self.post_process(df)
         df = self._drop_duplicates(df)
+        df = self.post_process(df)
         df = self._add_metadata(df)
         return df
 
@@ -84,13 +84,13 @@ class BaseTransformer:
     # Pipeline steps  (each reads its rules from self._config)
     # ------------------------------------------------------------------
 
-    def _drop_empty_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _drop_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Drop columns listed in config.COLUMNS_TO_DROP (matched against raw names)."""
         to_drop = getattr(self._config, "COLUMNS_TO_DROP", [])
         present = [c for c in to_drop if c in df.columns]
         if present:
             df = df.drop(columns=present)
-            self.logger.info("Dropped empty columns: %s", present)
+            self.logger.info("Dropped columns: %s", present)
         return df
 
     def _rename_columns(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -232,6 +232,65 @@ class BaseTransformer:
                 return pd.NA
 
         return series.map(_convert).astype("Int64")
+
+    def build_datetimes(
+        self, date: pd.Series, start_time: pd.Series, end_time: pd.Series
+    ):
+        """
+        Build start_datetime and end_datetime Series from date, start_time, and end_time.
+        If end_time < start_time, the end date is the next day.
+
+        Parameters:
+            date: pd.Series of dates (datetime or date objects)
+            start_time: pd.Series of times (datetime.time or strings like "22:45")
+            end_time: pd.Series of times (datetime.time or strings like "00:24")
+
+        Returns:
+            start_datetime: pd.Series of combined start datetimes
+            end_datetime: pd.Series of combined end datetimes
+        """
+        date_col = date.name or "date"
+        start_time_col = start_time.name or "start_time"
+        end_time_col = end_time.name or "end_time"
+
+        try:
+            date = pd.to_datetime(date).dt.normalize()
+            start_time = pd.to_timedelta(
+                pd.to_datetime(start_time.astype(str), format="%H:%M").dt.strftime(
+                    "%H:%M:%S"
+                )
+            )
+            end_time = pd.to_timedelta(
+                pd.to_datetime(end_time.astype(str), format="%H:%M").dt.strftime(
+                    "%H:%M:%S"
+                )
+            )
+
+            crosses_midnight = end_time <= start_time
+            end_date = date + pd.to_timedelta(crosses_midnight.astype(int), unit="D")
+
+            start_datetime = date + start_time
+            end_datetime = end_date + end_time
+
+        except Exception as e:
+            self.logger.warning(
+                "build_datetimes: failed to build datetimes from columns '%s', '%s', '%s' — %s",
+                date_col,
+                start_time_col,
+                end_time_col,
+                e,
+            )
+            return None, None
+
+        self.logger.info(
+            "build_datetimes: '%s' and '%s' built successfully from '%s', '%s', '%s'.",
+            "start_datetime",
+            "end_datetime",
+            date_col,
+            start_time_col,
+            end_time_col,
+        )
+        return start_datetime, end_datetime
 
 
 if __name__ == "__main__":

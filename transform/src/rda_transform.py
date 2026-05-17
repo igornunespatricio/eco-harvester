@@ -13,5 +13,11 @@ class RDATransformer(BaseTransformer):
         df["total_activity_interruption_min"] = self.hhmm_to_minutes(
             df["total_activity_interruption_time"]
         )
-        df = df.drop(columns=["total_activity_interruption_time"])
+        df["detection_start_datetime"], df["detection_end_datetime"] = (
+            self.build_datetimes(
+                df["event_date"],
+                df["detection_start_time"],
+                df["detection_end_time"],
+            )
+        )
         return df
