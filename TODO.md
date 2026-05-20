@@ -1,7 +1,9 @@
-- rebuild silver transformation to partition by year and month of event date and deduplicate based on latest uploaded file in bronze year/month/day, continue in transform/main.py and test in pipeline dag
+- build gold layer
 
-- create buckets environment variables and use them across the files
+- create layer environment variables and use them in the bucker: create BRONZE, SILVER and GOLD environment variables
 - create logger utility function or class
+- implement parameters in pipeline dag to optionally run scraper, transformation and gold, running all by default
+
 
 - remember the bandar report link is https://libgeo.univali.br/bandar/report
 ![alt text](assets/image.png)

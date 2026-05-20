@@ -64,14 +64,14 @@ def main() -> None:
         secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
     )
 
-    files = client.list_partition_files(
-        bucket_name=BUCKET_NAME,
-        partition_prefix=bronze_path(
-            form=args.entity, date=datetime.fromisoformat(args.date).date(), filename=""
-        ),
-    )
-    for file in files:
-        logger.info("Found file: %s", file)
+    # files = client.list_partition_files(
+    #     bucket_name=BUCKET_NAME,
+    #     partition_prefix=bronze_path(
+    #         form=args.entity, date=datetime.fromisoformat(args.date).date(), filename=""
+    #     ),
+    # )
+    # for file in files:
+    #     logger.info("Found file: %s", file)
 
     latest_file_dict = client.get_latest_file(
         bucket_name=BUCKET_NAME,
