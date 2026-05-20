@@ -1,6 +1,9 @@
+- use dbt for silver and gold layer transformations
+
+
 - build gold layer
 
-- create layer environment variables and use them in the bucker: create BRONZE, SILVER and GOLD environment variables
+- create layer environment variables and use them in the bucket: create BRONZE, SILVER and GOLD environment variables
 - create logger utility function or class
 - implement parameters in pipeline dag to optionally run scraper, transformation and gold, running all by default
 
