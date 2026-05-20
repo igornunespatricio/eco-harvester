@@ -17,6 +17,7 @@ from airflow.sdk import dag, Param, TaskGroup
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.timetables.interval import CronDataIntervalTimetable
+import pendulum
 
 # ---------------------------------------------------------------------------
 # Environment / config
@@ -84,7 +85,9 @@ def _docker_task(
 
 @dag(
     dag_id="pipeline_bronze_silver_gold",
-    schedule=CronDataIntervalTimetable("@monthly", timezone="UTC"),
+    schedule="@daily",
+    start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),
+    end_date=pendulum.datetime(2025, 1, 3, tz="UTC"),
     catchup=False,
     tags=["orchestrator", "bronze", "silver", "gold"],
     is_paused_upon_creation=True,
@@ -106,6 +109,21 @@ def _docker_task(
             type="boolean",
             description="If true, tasks run in dry-run mode (no writes)",
         ),
+        "run_scraper": Param(
+            default=True,
+            type="boolean",
+            description="Whether to run the scraper tasks in the bronze layer",
+        ),
+        "run_transformation": Param(
+            default=True,
+            type="boolean",
+            description="Whether to run the transformation tasks in the silver layer",
+        ),
+        "run_aggregation": Param(
+            default=True,
+            type="boolean",
+            description="Whether to run the aggregation tasks in the gold layer",
+        ),
     },
 )
 def pipeline_bronze_silver_gold():
@@ -124,21 +142,20 @@ def pipeline_bronze_silver_gold():
 
     with TaskGroup("bronze") as bronze_group:
         for form in FORMS:
-            # _docker_task(
-            #     task_id=f"scrape_{form.lower()}",
-            #     image="scraper:latest",
-            #     command=(
-            #         "python scraper/main.py"
-            #         " --interval-start '{{ data_interval_start }}'"
-            #         " --interval-end   '{{ data_interval_end }}'"
-            #         " --animals 'all_records'"
-            #         " --basins  'all_records'"
-            #         f" --form    '{form}'"
-            #         " --per     '{{ params.per }}'"
-            #         " --timeout '{{ params.timeout }}'"
-            #     ),
-            # )
-            EmptyOperator(task_id=f"scrape_{form.lower()}")
+            _docker_task(
+                task_id=f"scrape_{form.lower()}",
+                image="scraper:latest",
+                command=(
+                    "python scraper/main.py"
+                    " --date '{{ ds }}'"
+                    " --animals 'all_records'"
+                    " --basins  'all_records'"
+                    f" --form    '{form}'"
+                    " --per     '{{ params.per }}'"
+                    " --timeout '{{ params.timeout }}'"
+                ),
+            )
+            # EmptyOperator(task_id=f"scrape_{form.lower()}")
 
     # Sentinel: all bronze tasks must finish before silver starts
     bronze_done = EmptyOperator(task_id="bronze_completed")
@@ -155,8 +172,7 @@ def pipeline_bronze_silver_gold():
                 command=(
                     "python transform/main.py"
                     f" --entity  '{entity}'"
-                    " --interval-start '{{ data_interval_start }}'"
-                    " --interval-end   '{{ data_interval_end }}'"
+                    " --date '{{ ds }}'"
                     " --dry-run        '{{ params.dry_run }}'"
                 ),
             )

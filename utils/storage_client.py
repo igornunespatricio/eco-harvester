@@ -48,6 +48,30 @@ class MinioS3Client:
         buf.seek(0)
         return buf
 
+    def list_partition_files(
+        self, bucket_name: str, partition_prefix: str
+    ) -> list[dict]:
+        """
+        Return all objects under a given partition prefix with full metadata.
+
+        :param bucket_name: the bucket to query
+        :param partition_prefix: the partition path, e.g. "year=2024/month=01/"
+        :return: list of S3 object dicts with keys: Key, LastModified, ETag, Size, StorageClass
+        """
+        objects = []
+        paginator = self.s3.get_paginator("list_objects_v2")
+
+        for page in paginator.paginate(Bucket=bucket_name, Prefix=partition_prefix):
+            for obj in page.get("Contents", []):
+                objects.append(obj)
+
+        return objects
+
+    def get_latest_file(self, bucket_name: str, partition_prefix: str) -> dict | None:
+        """Return the most recently modified object in a partition, or None if empty."""
+        files = self.list_partition_files(bucket_name, partition_prefix)
+        return max(files, key=lambda o: o["LastModified"]) if files else None
+
 
 if __name__ == "__main__":
     # Example usage

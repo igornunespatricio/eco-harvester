@@ -1,6 +1,7 @@
-- build silver task group
-- build gold task group
-- create buckets environment variables and use them across the files 
+- rebuild silver transformation to partition by year and month of event date and deduplicate based on latest uploaded file in bronze year/month/day, continue in transform/main.py and test in pipeline dag
+
+- create buckets environment variables and use them across the files
+- create logger utility function or class
 
 - remember the bandar report link is https://libgeo.univali.br/bandar/report
 ![alt text](assets/image.png)
