@@ -99,6 +99,30 @@ services:
         limits:
           cpus: "1.0"
           memory: 1g
+  
+  dbt:
+    build:
+      context: .
+      dockerfile: ./dbt/Dockerfile
+    image: dbt:latest
+    volumes:
+      - dbt-data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DBT_PROFILES_DIR=/app
+    env_file:
+      - .env
+    restart: "no"
+    networks:
+      - eco-harvester-network
+    tty: true
+    stdin_open: true
+    command: sleep infinity
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
 
   minio:
     build:
@@ -292,6 +316,7 @@ volumes:
   minio-data:
   postgres-db-volume:
   transform-data:
+  dbt-data:  
 
 networks:
   eco-harvester-network:
