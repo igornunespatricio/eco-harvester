@@ -9,3 +9,5 @@ RUN groupadd -f -g ${DOCKER_GID} docker \
     && usermod -aG docker airflow
 
 USER airflow
+COPY requirements.txt .
+RUN pip install -r requirements.txt

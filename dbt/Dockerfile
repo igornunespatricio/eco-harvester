@@ -2,7 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install dbt-core dbt-duckdb
+COPY dbt/requirements.txt .
+RUN pip install -r requirements.txt
 
 COPY dbt/ .
 

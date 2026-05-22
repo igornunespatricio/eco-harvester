@@ -87,7 +87,7 @@ def _docker_task(
     dag_id="pipeline_bronze_silver_gold",
     schedule="@daily",
     start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),
-    end_date=pendulum.datetime(2025, 1, 31, tz="UTC"),
+    end_date=pendulum.datetime(2025, 1, 2, tz="UTC"),
     catchup=True,
     tags=["orchestrator", "bronze", "silver", "gold"],
     is_paused_upon_creation=True,

@@ -12,7 +12,7 @@ print("Current sys.path:", sys.path)
 
 from src.bandar_scraper import BandarScraper
 from utils.storage_client import MinioS3Client
-from utils.utility_functions import bronze_path
+from utils.utility_functions import bronze_path, xlsx_bytes_to_parquet
 
 BUCKET_NAME = "netuno"
 
@@ -58,11 +58,12 @@ xlsx_bytes = bandar.export_report(
 if xlsx_bytes is None:
     logger.info("Nothing to export, skipping file upload")
 else:
-    fileobj = BytesIO(xlsx_bytes) if isinstance(xlsx_bytes, bytes) else xlsx_bytes
+    parquet_bytes = xlsx_bytes_to_parquet(xlsx_bytes)
+    fileobj = BytesIO(parquet_bytes)
     key = bronze_path(
         args.form,
         scraping_date,
-        f"run_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')}.xlsx",
+        f"run_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')}.parquet",
     )
     client.upload_fileobj(
         fileobj=fileobj,

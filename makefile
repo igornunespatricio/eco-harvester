@@ -45,6 +45,40 @@ stop-minio:
 clean-minio:
 	docker compose down minio -v
 
+# Build dbt image
+build-dbt:
+	docker compose build dbt
+
+# Build dbt image with no cache
+build-dbt-nocache:
+	docker compose build dbt --no-cache
+
+# Start dbt container
+dbt: build-dbt
+	docker compose up -d dbt
+
+# Start dbt container with fresh build
+dbt-fresh: build-dbt-nocache
+	docker compose up -d dbt
+
+# Stop dbt container
+stop-dbt:
+	docker compose stop dbt
+
+# Remove dbt container
+clean-dbt:
+	docker compose down dbt -v
+
+# View dbt logs
+logs-dbt:
+	docker compose logs -f dbt
+
+build-airflow:
+	docker compose build airflow-worker airflow-scheduler airflow-apiserver
+
+build-airflow-nocache:
+	docker compose build airflow-worker airflow-scheduler airflow-apiserver --no-cache
+
 # start all containers
 start-no-cache:
 	docker compose build --no-cache

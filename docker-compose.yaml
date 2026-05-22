@@ -24,6 +24,14 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    BUCKETS: ${BUCKETS}
+    BRONZE_PATH: ${BRONZE_PATH}
+    SILVER_PATH: ${SILVER_PATH}
+    GOLD_PATH: ${GOLD_PATH}
+    AIRFLOW_CONN_DOCKER_DEFAULT: '{"conn_type": "docker", "host": "unix://var/run/docker.sock"}'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
