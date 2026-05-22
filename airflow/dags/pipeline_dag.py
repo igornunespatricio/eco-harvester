@@ -166,17 +166,17 @@ def pipeline_bronze_silver_gold():
 
     with TaskGroup("silver") as silver_group:
         for entity in SILVER_ENTITIES:
-            _docker_task(
-                task_id=f"transform_{entity}",
-                image="transform:latest",  # replace with image
-                command=(
-                    "python transform/main.py"
-                    f" --entity  '{entity}'"
-                    " --date '{{ ds }}'"
-                    " --dry-run        '{{ params.dry_run }}'"
-                ),
-            )
-            # EmptyOperator(task_id=f"transform_{entity}")
+            # _docker_task(
+            #     task_id=f"transform_{entity}",
+            #     image="transform:latest",  # replace with image
+            #     command=(
+            #         "python transform/main.py"
+            #         f" --entity  '{entity}'"
+            #         " --date '{{ ds }}'"
+            #         " --dry-run        '{{ params.dry_run }}'"
+            #     ),
+            # )
+            EmptyOperator(task_id=f"transform_{entity}")
 
     # Sentinel: all silver tasks must finish before gold starts
     silver_done = EmptyOperator(task_id="silver_completed")

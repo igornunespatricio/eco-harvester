@@ -1,5 +1,5 @@
 - use dbt for silver and gold layer transformations
-
+- need to create column ingested_at in scraper data after transforming to pandas so it can be used by dbt to get latest record per id for deduplication 
 
 - build gold layer
 
