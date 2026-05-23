@@ -1,7 +1,4 @@
 - use dbt for silver and gold layer transformations
-- need to create column ingested_at in scraper data after transforming to pandas so it can be used by dbt to get latest record per id for deduplication 
-
-- build gold layer
 
 - create layer environment variables and use them in the bucket: create BRONZE, SILVER and GOLD environment variables
 - create logger utility function or class

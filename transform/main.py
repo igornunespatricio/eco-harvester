@@ -60,8 +60,8 @@ def main() -> None:
 
     client = MinioS3Client(
         endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
-        access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-        secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+        access_key=os.getenv("MINIO_ROOT_USER", "minioadmin"),
+        secret_key=os.getenv("MINIO_ROOT_PASSWORD", "minioadmin"),
     )
 
     # files = client.list_partition_files(

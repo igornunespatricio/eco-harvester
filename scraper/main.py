@@ -5,12 +5,14 @@ from pathlib import Path
 from datetime import datetime, timezone
 from io import BytesIO
 import logging
-
+from dotenv import load_dotenv
 import pandas as pd
 
 dir = Path(__file__).parent.parent
 sys.path.append(str(dir))
 print("Current sys.path:", sys.path)
+
+load_dotenv(dotenv_path=dir / ".env")
 
 from src.bandar_scraper import BandarScraper
 from utils.storage_client import MinioS3Client
@@ -37,8 +39,8 @@ args = parser.parse_args()
 
 client = MinioS3Client(
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
-    access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-    secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+    access_key=os.getenv("MINIO_ROOT_USER", "wrongkey"),
+    secret_key=os.getenv("MINIO_ROOT_PASSWORD", "wrongkey"),
 )
 
 bandar = BandarScraper(

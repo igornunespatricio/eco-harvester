@@ -4,8 +4,8 @@ from airflow.sdk import dag, Param
 import os
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "")
-MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "")
+MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "")
+MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "")
 
 FORMS = ["RA", "RDA", "FIC", "PLN", "REG", "NEC", "ESF", "REAB", "REPRO", "RSOL"]
 
@@ -53,8 +53,8 @@ def make_scraper_dag(form: str):
             network_mode="eco-harvester-network",
             environment={
                 "MINIO_ENDPOINT": MINIO_ENDPOINT,
-                "MINIO_ACCESS_KEY": MINIO_ACCESS_KEY,
-                "MINIO_SECRET_KEY": MINIO_SECRET_KEY,
+                "MINIO_ROOT_USER": MINIO_ROOT_USER,
+                "MINIO_ROOT_PASSWORD": MINIO_ROOT_PASSWORD,
             },
             mount_tmp_dir=False,
         )
