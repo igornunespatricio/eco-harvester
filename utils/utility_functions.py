@@ -3,6 +3,7 @@ import datetime
 import os
 from io import BytesIO
 import pandas as pd
+from datetime import datetime, timezone
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 BRONZE_PATH = os.getenv("BRONZE_PATH", "bronze")
@@ -46,3 +47,33 @@ def xlsx_bytes_to_parquet(xlsx_bytes: bytes) -> bytes:
     parquet_buffer = BytesIO()
     df.to_parquet(parquet_buffer, index=False, engine="pyarrow")
     return parquet_buffer.getvalue()
+
+
+def add_ingested_at(df: pd.DataFrame) -> pd.DataFrame:
+    """Add an 'ingested_at' column with the current UTC timestamp to the DataFrame."""
+    result = df.copy()
+    result["ingested_at"] = datetime.now(timezone.utc)
+    return result
+
+
+def df_to_parquet_bytes(df: pd.DataFrame) -> bytes:
+    """Convert a DataFrame to parquet bytes."""
+    parquet_buffer = BytesIO()
+    df.to_parquet(parquet_buffer, index=False, engine="pyarrow")
+    return parquet_buffer.getvalue()
+
+
+def add_ingested_at(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Receives a DataFrame and returns a new one with an 'ingested_at' column
+    containing the current UTC timestamp.
+
+    Args:
+        df: Input DataFrame
+
+    Returns:
+        New DataFrame with 'ingested_at' column added
+    """
+    result = df.copy()
+    result["ingested_at"] = datetime.now(timezone.utc)
+    return result

@@ -6,13 +6,19 @@ from datetime import datetime, timezone
 from io import BytesIO
 import logging
 
+import pandas as pd
+
 dir = Path(__file__).parent.parent
 sys.path.append(str(dir))
 print("Current sys.path:", sys.path)
 
 from src.bandar_scraper import BandarScraper
 from utils.storage_client import MinioS3Client
-from utils.utility_functions import bronze_path, xlsx_bytes_to_parquet
+from utils.utility_functions import (
+    bronze_path,
+    df_to_parquet_bytes,
+    add_ingested_at,
+)
 
 BUCKET_NAME = "netuno"
 
@@ -44,7 +50,7 @@ bandar.authenticate()
 scraping_date = datetime.fromisoformat(args.date).date()
 
 
-print("Scraping date:", scraping_date)
+logger.info(f"Scraping date: {scraping_date}")
 
 xlsx_bytes = bandar.export_report(
     date_start=scraping_date,
@@ -58,7 +64,9 @@ xlsx_bytes = bandar.export_report(
 if xlsx_bytes is None:
     logger.info("Nothing to export, skipping file upload")
 else:
-    parquet_bytes = xlsx_bytes_to_parquet(xlsx_bytes)
+    df = pd.read_excel(BytesIO(xlsx_bytes), engine="openpyxl")
+    df = add_ingested_at(df)
+    parquet_bytes = df_to_parquet_bytes(df)
     fileobj = BytesIO(parquet_bytes)
     key = bronze_path(
         args.form,
