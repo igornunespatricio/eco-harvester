@@ -1,6 +1,6 @@
 - use dbt for silver and gold layer transformations
 
-- think how to prevent error/skipping when the partition of one of the forms don't have any file. 
+- refactor pipeline dag
 - create logger utility function or class
 - implement parameters in pipeline dag to optionally run scraper, silver and gold, running all by default
 

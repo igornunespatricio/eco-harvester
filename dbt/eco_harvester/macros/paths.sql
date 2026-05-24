@@ -1,5 +1,5 @@
 {% macro _path(layer_env, entity) -%}
-s3://{{ env_var("BUCKET") }}/{{ env_var(layer_env) }}/{{ entity }}/year={{ var("year") }}/month={{ "%02d" | format(var("month")) }}/day={{ "%02d" | format(var("day")) }}
+s3://{{ env_var("BUCKET") }}/{{ env_var(layer_env) }}/{{ entity }}/year={{ var("year") }}/month={{ "%02d" % (var("month") | int) }}/day={{ "%02d" % (var("day") | int) }}
 {%- endmacro %}
 
 {% macro bronze_path(entity) -%}
@@ -11,5 +11,5 @@ s3://{{ env_var("BUCKET") }}/{{ env_var(layer_env) }}/{{ entity }}/year={{ var("
 {%- endmacro %}
 
 {% macro silver_location(entity) -%}
-    {{ _path("SILVER_PATH", entity) }}_{{ var("year") }}{{ "%02d" | format(var("month")) }}{{ "%02d" | format(var("day")) }}.parquet
+    {{ _path("SILVER_PATH", entity) }}_{{ var("year") }}{{ "%02d" % (var("month") | int) }}{{ "%02d" % (var("day") | int) }}.parquet
 {%- endmacro %}
