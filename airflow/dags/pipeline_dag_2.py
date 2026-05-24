@@ -59,11 +59,11 @@ DBT_PROJECT_PATH = "/opt/airflow/dbt/eco_harvester"
 FORMS = [
     "RA",
     "RDA",
-]  # no data or sparse for these: "FIC", "PLN", "REG", "NEC", "ESF", "REAB", "REPRO", "RSOL"]
+]
 SILVER_ENTITIES = [
     "RA",
     "RDA",
-]  # one transform per form
+]
 
 GOLD_MARTS = [
     "mart_detections",
@@ -73,7 +73,7 @@ GOLD_MARTS = [
 
 
 # ---------------------------------------------------------------------------
-# Helper: build a DockerOperator (swap for any operator you need)
+# Helper: build a DockerOperator
 # ---------------------------------------------------------------------------
 
 
@@ -111,7 +111,7 @@ minio_client = MinioS3Client(
 
 
 @dag(
-    dag_id="pipeline_bronze_silver_gold",
+    dag_id="pipeline_bronze_silver_gold_2",
     schedule="@daily",
     start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),
     end_date=pendulum.datetime(2025, 1, 2, tz="UTC"),
@@ -156,12 +156,15 @@ minio_client = MinioS3Client(
 def pipeline_bronze_silver_gold():
 
     # -----------------------------------------------------------------------
-    # Sentinel tasks — give the graph clear entry / exit points and are
-    # ideal hooks for notifications, sensors, or data-quality gates later.
+    # Sentinel tasks
     # -----------------------------------------------------------------------
 
     start = EmptyOperator(task_id="start_pipeline")
-    end = EmptyOperator(task_id="end_pipeline")
+
+    end = EmptyOperator(
+        task_id="end_pipeline",
+        trigger_rule="all_done",
+    )
 
     # -----------------------------------------------------------------------
     # BRONZE — raw ingestion, one task per source, all in parallel
@@ -169,22 +172,8 @@ def pipeline_bronze_silver_gold():
 
     with TaskGroup("bronze") as bronze_group:
         for form in FORMS:
-            # _docker_task(
-            #     task_id=f"scrape_{form.lower()}",
-            #     image="scraper:latest",
-            #     command=(
-            #         "python scraper/main.py"
-            #         " --date '{{ ds }}'"
-            #         " --animals 'all_records'"
-            #         " --basins  'all_records'"
-            #         f" --form    '{form}'"
-            #         " --per     '{{ params.per }}'"
-            #         " --timeout '{{ params.timeout }}'"
-            #     ),
-            # )
             EmptyOperator(task_id=f"scrape_{form.lower()}")
 
-    # Sentinel: all bronze tasks must finish before silver starts
     bronze_done = EmptyOperator(task_id="bronze_completed")
 
     # -----------------------------------------------------------------------
@@ -192,43 +181,6 @@ def pipeline_bronze_silver_gold():
     # -----------------------------------------------------------------------
 
     with TaskGroup("silver") as silver_group:
-        # for entity in SILVER_ENTITIES:
-        # _docker_task(
-        #     task_id=f"transform_{entity}",
-        #     image="transform:latest",  # replace with image
-        #     command=(
-        #         "python transform/main.py"
-        #         f" --entity  '{entity}'"
-        #         " --date '{{ ds }}'"
-        #         " --dry-run        '{{ params.dry_run }}'"
-        #     ),
-        # )
-        # EmptyOperator(task_id=f"transform_{entity}")
-        # DbtTaskGroup(
-        #     group_id="dbt_transforms",
-        #     project_config=ProjectConfig(dbt_project_path=DBT_PROJECT_PATH),
-        #     profile_config=ProfileConfig(
-        #         profile_name="eco_harvester",  # must match the top-level key in profiles.yml
-        #         target_name="dev",  # must match the target in profiles.yml
-        #         profiles_yml_filepath="/opt/airflow/dbt/eco_harvester/profiles.yml",
-        #     ),
-        #     execution_config=ExecutionConfig(
-        #         execution_mode=ExecutionMode.DOCKER,
-        #         dbt_executable_path="dbt",
-        #     ),
-        #     render_config=RenderConfig(
-        #         load_method=LoadMode.DBT_LS,
-        #         select=["ra", "rda"],
-        #     ),
-        #     operator_args={
-        #         "image": "dbt:latest",
-        #         "network_mode": NETWORK,
-        #         "environment": DOCKER_ENV,
-        #         "auto_remove": "success",
-        #         "mount_tmp_dir": False,
-        #         "vars": "{ year: {{ ds[:4] }}, month: {{ ds[5:7] }}, day: {{ ds[8:10] }} }",
-        #     },
-        # )
         dbt_group = DbtTaskGroup(
             group_id="dbt_transforms",
             project_config=ProjectConfig(dbt_project_path=DBT_PROJECT_PATH),
@@ -255,6 +207,8 @@ def pipeline_bronze_silver_gold():
             },
         )
 
+        check_tasks = []  # collect references
+
         for form in FORMS:
             check = ShortCircuitOperator(
                 task_id=f"check_{form.lower()}_partition",
@@ -267,19 +221,14 @@ def pipeline_bronze_silver_gold():
                 },
                 ignore_downstream_trigger_rules=True,
             )
+            check_tasks.append(check)  # store reference
 
             task_key = f"silver.dbt_transforms.{form.lower()}_run"
             dbt_task = dbt_group.children.get(task_key)
-
-            if dbt_task is None:
-                raise ValueError(
-                    f"Could not find dbt task '{task_key}'. "
-                    f"Available: {list(dbt_group.children.keys())}"
-                )
-
             check >> dbt_task
 
-    # Sentinel: all silver tasks must finish before gold starts
+    # Sentinel: wired directly to dbt tasks, bypassing TaskGroup boundary
+    # so that a skipped form does not propagate skip to silver_completed
     silver_done = EmptyOperator(
         task_id="silver_completed",
         trigger_rule="all_done",
@@ -291,40 +240,20 @@ def pipeline_bronze_silver_gold():
 
     with TaskGroup("gold") as gold_group:
         for mart in GOLD_MARTS:
-            # _docker_task(
-            #     task_id=f"build_{mart}",
-            #     image="aggregator:latest",  # replace with image
-            #     command=(
-            #         "python aggregator/main.py"
-            #         f" --mart    '{mart}'"
-            #         " --interval-start '{{ data_interval_start }}'"
-            #         " --interval-end   '{{ data_interval_end }}'"
-            #         " --dry-run        '{{ params.dry_run }}'"
-            #     ),
-            # )
-            EmptyOperator(task_id=f"build_{mart}")
+            EmptyOperator(
+                task_id=f"build_{mart}",
+                trigger_rule="all_done",
+            )
 
-    # -----------------------------------------------------------------------
     # Wire the pipeline
-    #
-    #   start
-    #     └─► [bronze.*]  (parallel)
-    #               └─► bronze_done
-    #                       └─► [silver.*]  (parallel)
-    #                                 └─► silver_done
-    #                                         └─► [gold.*]  (parallel)
-    #                                                   └─► end
-    # -----------------------------------------------------------------------
+    start >> bronze_group >> bronze_done >> silver_group
 
-    (
-        start
-        >> bronze_group
-        >> bronze_done
-        >> silver_group
-        >> silver_done
-        >> gold_group
-        >> end
-    )
+    # Wire check tasks directly to silver_done — they live outside dbt_transforms
+    # TaskGroup so skip state won't propagate through a nested group boundary
+    for check in check_tasks:
+        check >> silver_done
+
+    silver_done >> gold_group >> end
 
 
 pipeline_bronze_silver_gold()

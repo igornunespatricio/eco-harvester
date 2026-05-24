@@ -22,7 +22,7 @@ from utils.utility_functions import (
     add_ingested_at,
 )
 
-BUCKET_NAME = "netuno"
+BUCKET_NAME = os.getenv("BUCKET")
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ parser.add_argument("--timeout", type=int, default=300)
 args = parser.parse_args()
 
 client = MinioS3Client(
+    # endpoint="localhost:9000",
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
     access_key=os.getenv("MINIO_ROOT_USER", "wrongkey"),
     secret_key=os.getenv("MINIO_ROOT_PASSWORD", "wrongkey"),

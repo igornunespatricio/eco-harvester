@@ -1,5 +1,5 @@
 {% macro _path(layer_env, entity) -%}
-s3://{{ env_var("BUCKETS") }}/{{ env_var(layer_env) }}/{{ entity }}/year={{ var("year") }}/month={{ "%02d" | format(var("month")) }}/day={{ "%02d" | format(var("day")) }}
+s3://{{ env_var("BUCKET") }}/{{ env_var(layer_env) }}/{{ entity }}/year={{ var("year") }}/month={{ "%02d" | format(var("month")) }}/day={{ "%02d" | format(var("day")) }}
 {%- endmacro %}
 
 {% macro bronze_path(entity) -%}

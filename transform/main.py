@@ -24,7 +24,7 @@ _TRANSFORMER_REGISTRY = {
     "RDA": RDATransformer,
 }
 
-BUCKET_NAME = "netuno"
+BUCKET_NAME = os.getenv("BUCKET")
 
 logger = logging.getLogger(__name__)
 

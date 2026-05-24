@@ -27,12 +27,14 @@ x-airflow-common:
     MINIO_ENDPOINT: ${MINIO_ENDPOINT}
     MINIO_ROOT_USER: ${MINIO_ROOT_USER}
     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    BUCKETS: ${BUCKETS}
+    BUCKET: ${BUCKET}
     BRONZE_PATH: ${BRONZE_PATH}
     SILVER_PATH: ${SILVER_PATH}
     GOLD_PATH: ${GOLD_PATH}
     AIRFLOW_CONN_DOCKER_DEFAULT: '{"conn_type": "docker", "host": "unix://var/run/docker.sock"}'
     DBT_PROFILES_DIR: "/opt/airflow/dbt/eco_harvester"
+    AIRFLOW_CONN_MINIO_DEFAULT: '{"conn_type": "aws", "login": "${MINIO_ROOT_USER}", "password": "${MINIO_ROOT_PASSWORD}", "extra": {"endpoint_url": "http://${MINIO_ENDPOINT}"}}'
+    PYTHONPATH: /opt/airflow
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -40,6 +42,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - /var/run/docker.sock:/var/run/docker.sock
     - ${AIRFLOW_PROJ_DIR:-.}/../dbt/eco_harvester:/opt/airflow/dbt/eco_harvester
+    - ${AIRFLOW_PROJ_DIR:-.}/../utils:/opt/airflow/utils
   user: "${AIRFLOW_UID:-50000}:0"
   group_add:
     - "${DOCKER_GID:-1001}"

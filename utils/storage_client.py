@@ -72,6 +72,13 @@ class MinioS3Client:
         files = self.list_partition_files(bucket_name, partition_prefix)
         return max(files, key=lambda o: o["LastModified"]) if files else None
 
+    def partition_has_files(self, bucket_name: str, partition_prefix: str) -> bool:
+        """
+        Check if any files exist under a given partition prefix.
+        Returns True if at least one file is found, False otherwise.
+        """
+        return len(self.list_partition_files(bucket_name, partition_prefix)) > 0
+
 
 if __name__ == "__main__":
     # Example usage

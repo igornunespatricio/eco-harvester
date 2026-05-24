@@ -1,8 +1,8 @@
 - use dbt for silver and gold layer transformations
 
-- create layer environment variables and use them in the bucket: create BRONZE, SILVER and GOLD environment variables
+- think how to prevent error/skipping when the partition of one of the forms don't have any file. 
 - create logger utility function or class
-- implement parameters in pipeline dag to optionally run scraper, transformation and gold, running all by default
+- implement parameters in pipeline dag to optionally run scraper, silver and gold, running all by default
 
 
 - remember the bandar report link is https://libgeo.univali.br/bandar/report
